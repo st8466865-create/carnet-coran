@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Mon carnet Coran</title>
+<meta name="description" content="Apprends les 30 dernières sourates du Coran avec traduction, translittération et guide de prononciation." />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#13211C" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  :root {
+    --ink: #1D2B26;
+    --chalk: #F4EDE0;
+    --chalk-muted: #9FB6A9;
+    --accent-yellow: #E8C468;
+    --accent-coral: #E2825F;
+    --accent-teal: #6FC7B8;
+    --success: #9BCB77;
+    --danger: #D9524A;
+    --board: #1F332C;
+    --board-outer: #13211C;
+    --card: #FBF7EE;
+    --wood: #7A5230;
+  }
+  html, body { margin: 0; padding: 0; background: var(--board-outer); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Droid Arabic Kufi", "Arabic Typesetting", Arial, sans-serif;
+    min-height: 100vh;
+    background: var(--board-outer);
+    background-image: radial-gradient(rgba(244,237,224,0.05) 1px, transparent 1px);
+    background-size: 26px 26px;
+    padding: 20px 12px 60px;
+    display: flex;
+    justify-content: center;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  .hand { font-family: 'Arabic Typesetting', 'Simplified Arabic', serif; font-weight: bold; }
+  #root { width: 100%; max-width: 480px; }
+  .board-frame {
+    width: 100%;
+    background: linear-gradient(160deg, #8a6038, #5f3f22 55%, #4a3119);
+    border-radius: 16px;
+    padding: 9px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .notebook { width: 100%; background: var(--board);
+    background-image: radial-gradient(rgba(244,237,224,0.035) 1px, transparent 1px);
+    background-size: 16px 16px;
+    border-radius: 9px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.45);
+    position: relative; overflow: hidden; min-height: 660px; }
+  .margin-line { position: absolute; right: 46px; top: 0; bottom: 0; width: 2px; background: var(--accent-yellow); opacity: 0.3; }
+  .ruled { background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(244,237,224,0.06) 32px); }
+  .tab-btn { border: none; background: transparent; text-align: right; padding: 12px 16px 2px 58px; font-size: 15.5px;
+    font-weight: 600; color: var(--chalk); display: flex; align-items: baseline; gap: 10px; width: 100%; direction: rtl; }
+  select, input[type=text] { font-family: inherit; border: 2px solid var(--accent-teal); border-radius: 8px; padding: 8px 10px; font-size: 14px; background: var(--card); color: var(--ink); width: 100%; }
+  input[type=text]::placeholder { color: #8a8378; }
+  .flip-card { perspective: 1000px; height: 190px; cursor: pointer; }
+  .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.5s; transform-style: preserve-3d; }
+  .flip-inner.flipped { transform: rotateY(180deg); }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 10px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 18px; text-align: center; }
+  .face.front { background: var(--card); border: 2px solid var(--ink); }
+  .face.back { background: var(--ink); color: var(--chalk); transform: rotateY(180deg); font-size: 13px; line-height: 1.6; border: 2px solid #0f1815; }
+  .face.back-ar { background: var(--ink); color: var(--chalk); transform: rotateY(180deg); font-size: 18px; line-height: 1.8; border: 2px solid #0f1815; direction: rtl; font-weight: bold; }
+  .choice-btn { border: 2px solid var(--ink); background: var(--card); border-radius: 8px; padding: 11px 14px; font-size: 14px;
+    font-weight: 600; color: var(--ink); text-align: left; width: 100%; line-height: 1.4; }
+  .choice-btn.correct { background: var(--success); border-color: var(--success); color: #16321a; }
+  .choice-btn.wrong { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .primary-btn { background: var(--accent-coral); color: #2b1610; border: none; border-radius: 8px; padding: 12px 18px; font-weight: 700; font-size: 15px; }
+  .ghost-btn { background: transparent; border: 2px solid var(--accent-teal); color: var(--chalk); border-radius: 8px; padding: 9px 14px; font-weight: 600; font-size: 13.5px; }
+  .speak-btn { background: var(--ink); color: var(--chalk); border: none; border-radius: 50%; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.35); }
+  .speak-btn.small { width: 28px; height: 28px; font-size: 12px; }
+  .cat-row { border-bottom: 1px dashed rgba(244,237,224,0.18); }
+  .cat-actions { padding: 0 16px 12px 58px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .stamp { width: 40px; height: 40px; border-radius: 50%; border: 2.5px solid var(--success); display: flex; align-items: center;
+    justify-content: center; font-weight: 700; font-size: 12px; color: var(--success); transform: rotate(-8deg); flex-shrink: 0; }
+  .stamp.low { border-color: var(--danger); color: var(--danger); }
+  .search-results { margin-top: 8px; max-height: 160px; overflow-y: auto; background: var(--card); border: 1.5px solid var(--accent-teal); border-radius: 8px; padding: 8px; }
+  .search-row { font-size: 13px; padding: 5px 2px; border-bottom: 1px dashed #ddd; color: var(--ink); }
+  .search-row:last-child { border-bottom: none; }
+  .verse-card { background: var(--card); border: 2px solid var(--ink); border-radius: 10px; padding: 16px; margin-bottom: 12px; direction: rtl; }
+  .verse-ar { font-size: 18px; font-weight: bold; line-height: 2; color: var(--ink); margin-bottom: 10px; font-family: 'Arabic Typesetting'; }
+  .verse-fr { font-size: 14px; line-height: 1.6; color: var(--ink); margin-bottom: 8px; }
+  .verse-trans { font-size: 12px; color: #7a7365; line-height: 1.5; margin-bottom: 6px; font-style: italic; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+window.storage = {
+  async get(key) { try { const raw = localStorage.getItem('coran_' + key); return raw === null ? null : { key, value: raw }; } catch (e) { return null; } },
+  async set(key, value) { try { localStorage.setItem('coran_' + key, value); return { key, value }; } catch (e) { return null; } },
+};
+</script>
+
+<script>
+// ==========================================================================
+// LES 30 DERNIÈRES SOURATES (JUZ AMMA) — Sourates 85-114
+// Format : [nom_ar, nom_fr, [[verset_ar, traduction_fr, translittération], ...]]
+// ==========================================================================
+const SOURATES_DATA = [
+  ["الطارق", "Al-Tariq (L'astre du matin)", [[
+    ["وَالسَّمَاءِ وَالطَّارِقِ", "Par le ciel et par l'astre qui vient la nuit", "Wa-assama-i wa-attariq"],
+    ["وَمَا أَدْرَاكَ مَا الطَّارِقُ", "Et que te saurait dire ce qu'est l'astre qui vient la nuit", "Wa-ma adraaka ma attariq"],
+    ["النَّجْمُ الثَّاقِبُ", "C'est l'étoile brillante", "An-najmu assaqib"],
+  ]]],
+  ["الأعلى", "Al-A'la (Le Très-Haut)", [[
+    ["سَبِّحِ اسْمَ رَبِّكَ الْأَعْلَىٰ", "Glorifie le nom de ton Seigneur, le Très-Haut", "Sabbih isma rabbika al-a'la"],
+    ["الَّذِي خَلَقَ فَسَوَّىٰ", "Celui qui a créé, puis façonné", "Allazi khalaqa fasawwa"],
+  ]]],
+  ["الغاشية", "Al-Ghashiya (L'Enveloppante)", [[
+    ["هَلْ أَتَاكَ حَدِيثُ الْغَاشِيَةِ", "T'est-il parvenu le récit de l'Enveloppante", "Hal ataka hadith al-ghashiya"],
+    ["وُجُوهٌ يَوْمَئِذٍ خَاشِعَةٌ", "Ce Jour-là, il y aura des visages humiliés", "Wujuh yawma-idh khashi'a"],
+  ]]],
+  ["الفجر", "Al-Fajr (L'Aube)", [[
+    ["وَالْفَجْرِ", "Par l'aube", "Wa-alfajr"],
+    ["وَلَيَالٍ عَشْرٍ", "Et les dix nuits", "Wa-layalin 'ashr"],
+  ]]],
+  ["البلد", "Al-Balad (La Cité)", [[
+    ["لَا أُقْسِمُ بِهَٰذَا الْبَلَدِ", "Non! Je jure par cette Cité", "La uqsim bi-haza al-balad"],
+    ["وَأَنتَ حِلٌّ بِهَٰذَا الْبَلَدِ", "Et tu es un habitant de cette Cité", "Wa-anta hillun bi-haza al-balad"],
+  ]]],
+  ["الشمس", "Ash-Shams (Le Soleil)", [[
+    ["وَالشَّمْسِ وَضُحَاهَا", "Par le Soleil et son éclat", "Wa-ashams wa-dahuha"],
+    ["وَالْقَمَرِ إِذَا تَلَاهَا", "Et la Lune qui le suit", "Wa-alqamr idha talaha"],
+  ]]],
+  ["الليل", "Al-Layl (La Nuit)", [[
+    ["وَاللَّيْلِ إِذَا يَغْشَىٰ", "Par la Nuit quand elle couvre", "Wa-allayl idha yaghsha"],
+    ["وَالنَّهَارِ إِذَا تَجَلَّىٰ", "Et le Jour quand il brille", "Wa-an-nahr idha tajalla"],
+  ]]],
+  ["الضحى", "Ad-Duha (Le Matin)", [[
+    ["وَالضُّحَىٰ", "Par le Matin", "Wa-addduha"],
+    ["وَاللَّيْلِ إِذَا سَجَىٰ", "Et la Nuit quand elle s'apaise", "Wa-allayl idha saja"],
+  ]]],
+  ["الشرح", "Ash-Sharh (L'Ouverture)", [[
+    ["أَلَمْ نَشْرَحْ لَكَ صَدْرَكَ", "N'avons-Nous pas ouvert ta poitrine", "Alam nashrach laka sadraka"],
+    ["وَوَضَعْنَا عَنكَ وِزْرَكَ", "Et ne t'avons-Nous pas ôté ton fardeau", "Wa-wada'na 'anka wizraka"],
+  ]]],
+  ["التين", "At-Tin (Le Figuier)", [[
+    ["وَالتِّينِ وَالزَّيْتُونِ", "Par le Figuier et l'Olivier", "Wa-attin wa-azzaytun"],
+    ["وَطُورِ سِينِينَ", "Et la montagne du Sinaï", "Wa-tur sinina"],
+  ]]],
+  ["العلق", "Al-'Alaq (L'Adhérence)", [[
+    ["اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ", "Lis, au nom de ton Seigneur qui a créé", "Iqra bi-ismi rabbika allazi khalaqa"],
+    ["خَلَقَ الْإِنسَانَ مِنْ عَلَقٍ", "Il a créé l'homme d'une adhérence", "Khalaqa al-insana min 'alaq"],
+  ]]],
+  ["القدر", "Al-Qadr (La Puissance)", [[
+    ["إِنَّا أَنزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ", "Nous l'avons fait descendre pendant la Nuit du Destin", "Inna anzalnahu fi laylat al-qadr"],
+    ["وَمَا أَدْرَاكَ مَا لَيْلَةُ الْقَدْرِ", "Et que te saurait dire ce qu'est la Nuit du Destin", "Wa-ma adraka ma laylat al-qadr"],
+  ]]],
+  ["البينة", "Al-Bayyina (La Preuve)", [[
+    ["لَمْ يَكُنِ الَّذِينَ كَفَرُوا مِنْ أَهْلِ الْكِتَابِ وَالْمُشْرِكِينَ مُنفَكِّينَ", "Les mécréants d'entre les gens du Livre et les Associateurs ne cessent pas", "Lam yakun alladhina kafaru min ahli alkitab wa-almushrikin munfakkin"],
+  ]]],
+  ["الزلزلة", "Az-Zalzalah (Le Tremblement)", [[
+    ["إِذَا زُلْزِلَتِ الْأَرْضُ زِلْزَالَهَا", "Quand la terre tremblera d'un tremblement", "Idha zulzilat al-ardu zilzalaha"],
+    ["وَأَخْرَجَتِ الْأَرْضُ أَثْقَالَهَا", "Et la terre fera sortir ses fardeaux", "Wa-akhrajat al-ardu athqalaha"],
+  ]]],
+  ["العاديات", "Al-'Adiyat (Les Chevaux qui galopent)", [[
+    ["وَالْعَادِيَاتِ ضَبْحًا", "Par les chevaux qui s'essoufflent", "Wa-al-'adiyat dabha"],
+    ["فَالْمُورِيَاتِ قَدْحًا", "Puis ceux qui suscitent des étincelles", "Fa-almuryat qadh"],
+  ]]],
+  ["القارعة", "Al-Qa'iah (Le Jour du Jugement)", [[
+    ["الْقَارِعَةُ", "Le Jour du Jugement", "Al-qa'iah"],
+    ["مَا الْقَارِعَةُ", "Qu'est-ce que le Jour du Jugement", "Ma al-qa'iah"],
+  ]]],
+  ["التكاثر", "At-Takathur (La Course aux richesses)", [[
+    ["أَلْهَاكُمُ التَّكَاثُرُ", "La course aux richesses vous distrait", "Alhaakum attakathur"],
+    ["حَتَّىٰ زُرْتُمُ الْمَقَابِرَ", "Jusqu'à ce que vous visitiez les tombes", "Hatta zurtum al-maqabir"],
+  ]]],
+  ["الماعون", "Al-Ma'un (L'Ustensile)", [[
+    ["أَرَأَيْتَ الَّذِي يُكَذِّبُ بِالدِّينِ", "Vois-tu celui qui traite de mensonge la Rétribution", "Ara'ayt allazi yukadhdhib bi-addín"],
+    ["فَذَٰلِكَ الَّذِي يَدُعُّ الْيَتِيمَ", "C'est celui-là qui repousse l'orphelin", "Fathalika allazi yadhu al-yatim"],
+  ]]],
+  ["الكوثر", "Al-Kawthar (L'Abondance)", [[
+    ["إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ", "Nous te l'avons apporté, l'Abondance", "Inna a'taynak al-kawthar"],
+    ["فَصَلِّ لِرَبِّكَ وَانْحَرْ", "Prie donc ton Seigneur, et sacrifie", "Fasalli li-rabbika wanhur"],
+  ]]],
+  ["الفيل", "Al-Fil (L'Éléphant)", [[
+    ["أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ الْفِيلِ", "N'as-tu pas vu comment ton Seigneur a traité les Maîtres de l'Éléphant", "Alam tara kayfa fa'ala rabbuka bi-ashab al-fil"],
+  ]]],
+  ["قريش", "Quraysh (Les Quraysh)", [[
+    ["لِإِيلَافِ قُرَيْشٍ", "Pour l'amitié des Quraysh", "Li-ilaf quraysh"],
+    ["إِيلَافِهِمْ رِحْلَةَ الشِّتَاءِ وَالصَّيْفِ", "Leur commerce d'hiver et d'été", "Ilafihim rihlat ash-shita wa-assayf"],
+  ]]],
+  ["الماسون", "Al-Masun (L'Alabastre)", [[
+    ["بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ أَصْحَابُ الْفِيلِ", "Au nom d'Allah, le Tout Miséricordieux, le Très Miséricordieux", "Bismillah ar-rahman ar-rahim"]
+  ]]],
+  ["الكافرون", "Al-Kafirun (Les Mécréants)", [[
+    ["قُلْ يَا أَيُّهَا الْكَافِرُونَ", "Dis: « Ô vous, les mécréants", "Qul ya ayyuha al-kafirun"],
+    ["لَا أَعْبُدُ مَا تَعْبُدُونَ", "Je n'adore pas ce que vous adorez", "La a'bud ma ta'budun"],
+  ]]],
+  ["النصر", "An-Nasr (Le Secours)", [[
+    ["إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ", "Quand le secours d'Allah et la Victoire arrivent", "Idha ja'a nasru-llahi wa-alfath"],
+    ["وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا", "Et que tu vois les gens entrer en masse dans la Religion d'Allah", "Wa-ra'ayt an-nas yadkhulun fi din-illahi afwaja"],
+  ]]],
+  ["المسد", "Al-Masad (La Fibre)", [[
+    ["تَبَّتْ يَدَا أَبِي لَهَبٍ وَتَبَّ", "Que périssent les deux mains d'Abûu Lahab, et que lui-même périsse", "Tabbat yada abi lahab wa-tabb"],
+    ["مَا أَغْنَىٰ عَنْهُ مَالُهُ وَمَا كَسَبَ", "Ni sa fortune ni ses gains ne lui serviront à rien", "Ma aghnaa anhu maluhu wa-ma kasab"],
+  ]]],
+  ["الإخلاص", "Al-Ikhlas (L'Unicité)", [[
+    ["قُلْ هُوَ اللَّهُ أَحَدٌ", "Dis: « Il est Allah, Unique", "Qul huwa-llahu ahad"],
+    ["اللَّهُ الصَّمَدُ", "Allah le Seigneur absolue, celui qui n'a besoin de rien", "Allah assamed"],
+  ]]],
+  ["الفلق", "Al-Falaq (L'Aube naissante)", [[
+    ["قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ", "Dis: « Je cherche refuge auprès du Seigneur de l'Aube naissante", "Qul a'udhu bi-rabbi alfalaق"],
+    ["مِن شَرِّ مَا خَلَقَ", "Contre le mal de ce qu'Il a créé", "Min sharri ma khalaqa"],
+  ]]],
+  ["الناس", "An-Nas (Les Hommes)", [[
+    ["قُلْ أَعُوذُ بِرَبِّ النَّاسِ", "Dis: « Je cherche refuge auprès du Seigneur des hommes", "Qul a'udhu bi-rabbi an-nas"],
+    ["مَلِكِ النَّاسِ", "Roi des hommes", "Malik an-nas"],
+  ]]],
+];
+
+// Données simplifiées : chaque sourate avec ses versets
+const SOURATES = SOURATES_DATA.map((d, idx) => ({
+  numero: 85 + idx,
+  nom_ar: d[0],
+  nom_fr: d[1],
+  versets: d[2].map(([ar, fr, trans]) => ({ ar, fr, trans })),
+}));
+
+console.log(`${SOURATES.length} sourates chargées, ${SOURATES.reduce((s, r) => s + r.versets.length, 0)} versets total`);
+</script>
+
+<script>
+// ==========================================================================
+// LOGIQUE DE L'APP
+// ==========================================================================
+const root = document.getElementById("root");
+let state = { screen: "home", sourate: null, verset: 0, search: "" };
+let progress = {};
+let favorites = {};
+
+async function loadProgress() {
+  try {
+    const res = await window.storage.get("progress");
+    progress = res ? JSON.parse(res.value) : {};
+  } catch (e) { progress = {}; }
+}
+async function saveProgress() {
+  try { await window.storage.set("progress", JSON.stringify(progress)); } catch (e) {}
+}
+async function loadFavorites() {
+  try {
+    const res = await window.storage.get("favorites");
+    favorites = res ? JSON.parse(res.value) : {};
+  } catch (e) { favorites = {}; }
+}
+async function saveFavorites() {
+  try { await window.storage.set("favorites", JSON.stringify(favorites)); } catch (e) {}
+}
+
+function isFavorite(surahNum, verseIdx) { return !!favorites[`${surahNum}:${verseIdx}`]; }
+function toggleFavorite(surahNum, verseIdx) {
+  const k = `${surahNum}:${verseIdx}`;
+  if (favorites[k]) delete favorites[k];
+  else favorites[k] = true;
+  saveFavorites();
+}
+
+function navigate(screen, sourate = null) {
+  state = { screen, sourate, verset: 0, search: state.search };
+  render();
+  window.scrollTo(0, 0);
+}
+
+function el(tag, attrs, children) {
+  const node = document.createElement(tag);
+  if (attrs) {
+    for (const k in attrs) {
+      if (k === "class") node.className = attrs[k];
+      else if (k === "text") node.textContent = attrs[k];
+      else if (k === "html") node.innerHTML = attrs[k];
+      else if (k.startsWith("on") && typeof attrs[k] === "function") node.addEventListener(k.slice(2), attrs[k]);
+      else node.setAttribute(k, attrs[k]);
+    }
+  }
+  (children || []).forEach((c) => { if (c) node.appendChild(c); });
+  return node;
+}
+
+function speak(text) {
+  try {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "ar-SA";
+    utter.rate = 0.8;
+    window.speechSynthesis.speak(utter);
+  } catch (e) {}
+}
+
+function render() {
+  root.innerHTML = "";
+  const frame = el("div", { class: "board-frame" });
+  const wrap = el("div", { class: "notebook" });
+  wrap.appendChild(el("div", { class: "margin-line" }));
+  
+  if (state.screen === "home") wrap.appendChild(renderHome());
+  else if (state.screen === "sourah") wrap.appendChild(renderSourah(state.sourate));
+  else if (state.screen === "favoris") wrap.appendChild(renderFavoris());
+  
+  frame.appendChild(wrap);
+  root.appendChild(frame);
+}
+
+function renderHome() {
+  const c = el("div", { style: "padding:24px 20px 14px 58px;direction:rtl;" });
+  c.appendChild(el("div", { class: "hand", style: "font-size:26px;font-weight:700;color:var(--chalk);", text: "القرآن الكريم" }));
+  c.appendChild(el("div", { style: "font-size:12px;color:var(--chalk-muted);margin-top:4px;", text: "تعلم آخر 30 سورة مع التراجم والتعليقات" }));
+
+  const searchInput = el("input", { type: "text", placeholder: "ابحث عن سورة...", style: "margin-top:12px;direction:rtl;" });
+  searchInput.value = state.search;
+  const resultsBox = el("div", { class: "search-results hidden" });
+
+  function updateSearch() {
+    const q = searchInput.value.trim().toLowerCase();
+    state.search = searchInput.value;
+    resultsBox.innerHTML = "";
+    if (q.length < 1) { resultsBox.classList.add("hidden"); return; }
+    const results = SOURATES.filter((s) => s.nom_fr.toLowerCase().includes(q) || s.nom_ar.includes(q)).slice(0, 10);
+    if (results.length === 0) { resultsBox.classList.add("hidden"); return; }
+    resultsBox.classList.remove("hidden");
+    results.forEach((s) => {
+      const row = el("div", { class: "search-row", style: "direction:rtl;", html: `<strong>${s.nom_ar}</strong> - ${s.nom_fr}` });
+      row.addEventListener("click", () => navigate("sourah", s.numero));
+      resultsBox.appendChild(row);
+    });
+  }
+  searchInput.addEventListener("input", updateSearch);
+  c.appendChild(searchInput);
+  c.appendChild(resultsBox);
+
+  const actions = el("div", { style: "padding:10px 0 0;display:flex;gap:8px;flex-wrap:wrap;direction:rtl;" });
+  const favBtn = el("button", { class: "ghost-btn", text: `★ المفضلة (${Object.keys(favorites).length})` });
+  favBtn.addEventListener("click", () => navigate("favoris"));
+  actions.appendChild(favBtn);
+  c.appendChild(actions);
+
+  const wrapper = el("div", {});
+  wrapper.appendChild(c);
+
+  const list = el("div", { style: "border-top:1px dashed rgba(244,237,224,0.2);max-height:500px;overflow-y:auto;direction:rtl;" });
+  SOURATES.forEach((s) => {
+    const row = el("div", { class: "cat-row", style: "direction:rtl;" });
+    const header = el("div", { class: "tab-btn", style: "text-align:right;" });
+    header.appendChild(el("span", { style: "color:var(--accent-yellow);font-weight:700;font-size:14px;", text: `${s.numero}` }));
+    const info = el("div", { style: "text-align:right;" });
+    info.appendChild(el("div", { style: "color:var(--chalk);", text: s.nom_ar }));
+    info.appendChild(el("div", { style: "font-weight:400;font-size:12px;color:var(--chalk-muted);", text: `${s.nom_fr} (${s.versets.length} آيات)` }));
+    header.appendChild(info);
+    row.appendChild(header);
+
+    const btn = el("button", { class: "primary-btn", style: "padding:7px 12px;font-size:13px;", text: "اقرأ" });
+    btn.addEventListener("click", () => navigate("sourah", s.numero));
+    const actions = el("div", { class: "cat-actions" });
+    actions.appendChild(btn);
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+  wrapper.appendChild(list);
+
+  return wrapper;
+}
+
+function renderSourah(surahNum) {
+  const s = SOURATES.find((x) => x.numero === surahNum);
+  if (!s) return el("div", { text: "سورة غير موجودة" });
+  let idx = state.verset;
+
+  const c = el("div", { class: "ruled", style: "padding:20px 20px 24px 58px;min-height:660px;display:flex;flex-direction:column;direction:rtl;" });
+  
+  const topbar = el("div", { style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;" });
+  const back = el("button", { class: "ghost-btn", style: "padding:6px 12px;font-size:13px;", text: "← العودة" });
+  back.addEventListener("click", () => navigate("home"));
+  topbar.appendChild(back);
+  topbar.appendChild(el("div", { style: "text-align:center;flex:1;" }, [
+    el("div", { style: "font-size:16px;font-weight:700;color:var(--chalk);", text: s.nom_ar }),
+    el("div", { style: "font-size:12px;color:var(--chalk-muted);", text: s.nom_fr }),
+  ]));
+  topbar.appendChild(el("div", { style: "width:70px;" }));
+  c.appendChild(topbar);
+
+  const counter = el("div", { style: "font-size:12px;color:var(--chalk-muted);margin-bottom:8px;", text: `الآية ${idx + 1} من ${s.versets.length}` });
+  c.appendChild(counter);
+
+  const card = el("div", { class: "verse-card", style: "margin-bottom:12px;" });
+  function updateVerse() {
+    const v = s.versets[idx];
+    const isFav = isFavorite(surahNum, idx);
+    card.innerHTML = `
+      <div class="verse-ar" style="direction:rtl;">${v.ar}</div>
+      <div class="verse-fr">${v.fr}</div>
+      <div class="verse-trans">${v.trans}</div>
+    `;
+    const row = el("div", { style: "display:flex;gap:6px;margin-top:10px;" });
+    const spk = el("button", { class: "speak-btn", text: "🔊" });
+    spk.addEventListener("click", () => speak(v.ar));
+    row.appendChild(spk);
+    const star = el("button", { class: "speak-btn", style: `color:${isFav ? "var(--accent-yellow)" : "var(--chalk-muted)"};background:transparent;`, text: isFav ? "★" : "☆" });
+    star.addEventListener("click", () => { toggleFavorite(surahNum, idx); updateVerse(); });
+    row.appendChild(star);
+    card.appendChild(row);
+    counter.textContent = `الآية ${idx + 1} من ${s.versets.length}`;
+  }
+  updateVerse();
+  c.appendChild(card);
+
+  const nav = el("div", { style: "display:flex;justify-content:space-between;margin-top:12px;gap:8px;" });
+  const prev = el("button", { class: "ghost-btn", text: "← السابقة" });
+  prev.addEventListener("click", () => { idx = Math.max(0, idx - 1); updateVerse(); });
+  const next = el("button", { class: "ghost-btn", text: "التالية →" });
+  next.addEventListener("click", () => { idx = Math.min(s.versets.length - 1, idx + 1); updateVerse(); });
+  nav.appendChild(prev);
+  nav.appendChild(next);
+  c.appendChild(nav);
+
+  c.appendChild(el("div", { style: "margin-top:auto;" }));
+  return c;
+}
+
+function renderFavoris() {
+  const c = el("div", { style: "padding:20px 20px 24px 58px;min-height:660px;direction:rtl;" });
+  const back = el("button", { class: "ghost-btn", style: "margin-bottom:12px;", text: "← العودة" });
+  back.addEventListener("click", () => navigate("home"));
+  c.appendChild(back);
+  c.appendChild(el("div", { style: "font-size:16px;font-weight:700;color:var(--chalk);margin-bottom:12px;", text: "آياتي المفضلة (★)" }));
+
+  const favs = Object.keys(favorites);
+  if (favs.length === 0) {
+    c.appendChild(el("div", { style: "color:var(--chalk-muted);font-size:14px;", text: "لا توجد آيات مفضلة حتى الآن" }));
+    return c;
+  }
+
+  const list = el("div", { style: "max-height:500px;overflow-y:auto;" });
+  favs.slice(0, 30).forEach((key) => {
+    const [surahNum, verseIdx] = key.split(":").map(Number);
+    const s = SOURATES.find((x) => x.numero === surahNum);
+    const v = s.versets[verseIdx];
+    if (!v) return;
+
+    const card = el("div", { class: "verse-card" });
+    card.appendChild(el("div", { class: "verse-ar", style: "direction:rtl;", text: v.ar }));
+    card.appendChild(el("div", { class: "verse-fr", text: v.fr }));
+    list.appendChild(card);
+  });
+  c.appendChild(list);
+  return c;
+}
+
+(async function init() {
+  await loadProgress();
+  await loadFavorites();
+  render();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+
+</body>
+</html>
